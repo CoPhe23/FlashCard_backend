@@ -6,6 +6,17 @@ import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app = express();
+app.get("/debug-env", (req, res) => {
+  res.json({
+    hasJWT: !!process.env.JWT_SECRET,
+    hasAuthKey: !!process.env.AUTH_KEY,
+    hasFrontendUrl: !!process.env.FRONTEND_URL,
+    hasFbProject: !!process.env.FIREBASE_PROJECT_ID,
+    hasFbEmail: !!process.env.FIREBASE_CLIENT_EMAIL,
+    hasFbKey: !!process.env.FIREBASE_PRIVATE_KEY,
+  });
+});
+
 
 const isProd = process.env.NODE_ENV === "production";
 
