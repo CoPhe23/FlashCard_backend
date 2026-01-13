@@ -1,15 +1,19 @@
 import admin from "firebase-admin";
-import dotenv from "dotenv";
-import fs from "fs";
 
-dotenv.config();
+function required(name) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env var: ${name}`);
+  return v;
+}
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync(process.env.FIREBASE_KEY_PATH, "utf8")
-);
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: required("FIREBASE_PROJECT_ID"),
+      clientEmail: required("FIREBASE_CLIENT_EMAIL"),
+      privateKey: required("FIREBASE_PRIVATE_KEY").replace(/\\n/g, "\n"),
+    }),
+  });
+}
 
 export const db = admin.firestore();
