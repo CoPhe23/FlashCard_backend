@@ -7,15 +7,24 @@ import cookieParser from "cookie-parser";
 dotenv.config();
 const app = express();
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL,
-  credentials: true
-}));
+const isProd = process.env.NODE_ENV === "production";
+
+// CORS: prodon Netlify domain, localon localhost
+const allowedOrigins = [
+  process.env.FRONTEND_URL,          // pl. https://xxx.netlify.app
+  "http://localhost:5173",           // Vite dev
+  "http://127.0.0.1:5173"
+].filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 app.use(cookieParser());
-
-const isProd = process.env.NODE_ENV === "production";
 
 function requireAuth(req, res, next) {
   try {
@@ -32,15 +41,18 @@ app.get("/", (req, res) => res.send("FlashCards API running"));
 
 app.post("/api/auth/login", (req, res) => {
   const { key } = req.body;
-  if (key !== process.env.AUTH_KEY) return res.status(401).json({ error: "Hibás kulcs!" });
+  if (key !== process.env.AUTH_KEY) {
+    return res.status(401).json({ error: "Hibás kulcs!" });
+  }
 
   const token = jwt.sign({ access: true }, process.env.JWT_SECRET, { expiresIn: "2h" });
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: isProd,
+    secure: isProd,                 // prodon true (HTTPS)
     sameSite: isProd ? "none" : "strict",
-    maxAge: 2 * 60 * 60 * 1000
+    maxAge: 2 * 60 * 60 * 1000,
+    path: "/",                      // fontos a clearCookie miatt is
   });
 
   res.sendStatus(200);
@@ -50,7 +62,8 @@ app.post("/api/auth/logout", (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? "none" : "strict"
+    sameSite: isProd ? "none" : "strict",
+    path: "/",                      // ugyanaz, mint setnél
   });
   res.sendStatus(200);
 });
@@ -70,7 +83,7 @@ app.get("/api/protected", requireAuth, (req, res) => {
   res.sendStatus(200);
 });
 
-import { db } from "./firebase.js";
+import { db } from "../firebase.js";  // FIGYELEM: útvonal változik, mert api/ alá került!
 
 app.get("/api/topics", async (req, res) => {
   const snap = await db.collection("topics").get();
@@ -137,6 +150,4 @@ app.post("/api/cards/:topic", requireAuth, async (req, res) => {
 });
 
 
-const port = process.env.PORT || 8000;
-app.listen(port, () => console.log("server running on port:", port));
-
+export default app;
