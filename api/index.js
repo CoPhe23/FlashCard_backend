@@ -22,7 +22,9 @@ const isProd = process.env.NODE_ENV === "production";
 
 // CORS: prodon Netlify domain, localon localhost
 const allowedOrigins = [
-  process.env.FRONTEND_URL,          // pl. https://xxx.netlify.app
+  process.env.FRONTEND_URL,
+  
+  "https://flashcardsbmm.netlify.app/",
   "http://localhost:5173",           // Vite dev
   "http://127.0.0.1:5173"
 ].filter(Boolean);
